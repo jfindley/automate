@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+// Timer to prevent races during schedule test.
+// Deliberately set high to allow for old hardware.
+var testRaceMs = 300 * time.Millisecond
+
 func TestRunControl(t *testing.T) {
 
 	ctl := NewRunControl()
@@ -14,13 +18,13 @@ func TestRunControl(t *testing.T) {
 	go func() {
 		defer ctl.Register()()
 		work <- true
-		time.Sleep(1 * time.Second)
+		time.Sleep(testRaceMs)
 	}()
 
 	// Ensure that work happens after start and before end
 	startTimeout := make(chan bool, 1)
 	go func() {
-		time.Sleep(1 * time.Second)
+		time.Sleep(testRaceMs)
 		startTimeout <- true
 	}()
 
@@ -39,7 +43,7 @@ func TestRunControl(t *testing.T) {
 
 	endTimeout := make(chan bool, 1)
 	go func() {
-		time.Sleep(1 * time.Second)
+		time.Sleep(testRaceMs)
 		endTimeout <- true
 	}()
 
