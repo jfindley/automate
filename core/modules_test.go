@@ -5,8 +5,7 @@ import (
 	"testing"
 )
 
-type testModule struct {
-}
+type testModule struct{}
 
 func (t testModule) Name() string {
 	return "Test Module"
@@ -14,13 +13,15 @@ func (t testModule) Name() string {
 
 func (t testModule) Run(r ResponseWriter, i Input) {
 	r.Success(true)
-	r.TriggerCallbacks(true)
+	r.Changed(true)
 	r.Message("info", "Run completed successfully with data:", i.Data()["input"])
 }
 
 func (t testModule) Start() {}
 
 func (t testModule) Wait() {}
+
+func (t testModule) TriggeredJobs(jobs ...Module) {}
 
 func NewTestModule() testModule {
 	return testModule{}
@@ -31,19 +32,24 @@ type testResponse struct {
 	callbacks bool
 	message   string
 	level     string
+	status    ModuleStatus
 }
 
 func (t *testResponse) Success(in bool) {
 	t.ok = in
 }
 
-func (t *testResponse) TriggerCallbacks(in bool) {
+func (t *testResponse) Changed(in bool) {
 	t.callbacks = in
 }
 
 func (t *testResponse) Message(level string, messages ...interface{}) {
 	t.message = fmt.Sprint(messages)
 	t.level = level
+}
+
+func (t *testResponse) Status(m ModuleStatus) {
+	t.status = m
 }
 
 type testInput struct {
