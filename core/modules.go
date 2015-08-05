@@ -2,16 +2,15 @@ package core
 
 type Module interface {
 	Name() string
-	Start()
-	Wait()
-	TriggeredJobs(...Module)
-	Run(ResponseWriter, Input)
+	Configure(Input) error
+	Run(ResponseWriter)
 }
 
 type ResponseWriter interface {
 	Success(bool)
 	Changed(bool)
 	Message(string, ...interface{})
+	TriggeredJobs(...Module)
 	Status(ModuleStatus)
 }
 
@@ -23,5 +22,5 @@ type ModuleStatus struct {
 	ResourceName     string
 	ManagedResources []string
 	ChangedResources []string
-	Data             map[string]interface{}
+	Metadata         map[string]interface{}
 }

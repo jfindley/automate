@@ -5,26 +5,27 @@ import (
 	"testing"
 )
 
-type testModule struct{}
+type testModule struct {
+	data map[string]interface{}
+}
 
-func (t testModule) Name() string {
+func (t *testModule) Name() string {
 	return "Test Module"
 }
 
-func (t testModule) Run(r ResponseWriter, i Input) {
-	r.Success(true)
-	r.Changed(true)
-	r.Message("info", "Run completed successfully with data:", i.Data()["input"])
+func (t *testModule) Configure(in Input) error {
+	t.data = in.Data()
+	return nil
 }
 
-func (t testModule) Start() {}
+func (t *testModule) Run(r ResponseWriter) {
+	r.Success(true)
+	r.Changed(true)
+	r.Message("info", "Run completed successfully with data:", t.data["input"])
+}
 
-func (t testModule) Wait() {}
-
-func (t testModule) TriggeredJobs(jobs ...Module) {}
-
-func NewTestModule() testModule {
-	return testModule{}
+func NewTestModule() *testModule {
+	return new(testModule)
 }
 
 type testResponse struct {
@@ -52,6 +53,10 @@ func (t *testResponse) Status(m ModuleStatus) {
 	t.status = m
 }
 
+func (t *testResponse) TriggeredJobs(jobs ...Module) {
+
+}
+
 type testInput struct {
 	data map[string]interface{}
 }
@@ -71,7 +76,8 @@ func TestModule(t *testing.T) {
 	m = NewTestModule()
 	i.data = map[string]interface{}{"input": "test string"}
 
-	m.Run(&r, i)
+	m.Configure(i)
+	m.Run(&r)
 
 	if r.level != "info" {
 		t.Error("Bad level:", r.level)
