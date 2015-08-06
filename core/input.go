@@ -99,6 +99,10 @@ func containsTypes(needle string, haystack []string) bool {
 				return true
 			}
 
+		case "pipe":
+			if needle == "*io.PipeWriter" || needle == "*io.PipeReader" {
+				return true
+			}
 		}
 
 	}

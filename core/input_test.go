@@ -1,6 +1,7 @@
 package core
 
 import (
+	"io"
 	"testing"
 )
 
@@ -25,6 +26,10 @@ fourth:
   values:
   - create
   - delete
+
+fifth:
+  types:
+  - pipe
 
 `)
 
@@ -88,6 +93,22 @@ func TestInput(t *testing.T) {
 	}
 
 	conf.data["fourth"] = "create"
+	if !conf.Validate(schema) {
+		t.Error("Config failed to validate with proper types")
+	}
+
+	in, out := io.Pipe()
+	conf.data["fifth"] = "bad"
+	if conf.Validate(schema) {
+		t.Error("Config validated with improper types")
+	}
+
+	conf.data["fifth"] = in
+	if !conf.Validate(schema) {
+		t.Error("Config failed to validate with proper types")
+	}
+
+	conf.data["fifth"] = out
 	if !conf.Validate(schema) {
 		t.Error("Config failed to validate with proper types")
 	}
