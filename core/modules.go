@@ -16,6 +16,7 @@ type ResponseWriter interface {
 
 type Input interface {
 	Data() map[string]interface{}
+	Validate(InputSchema) bool
 }
 
 type ModuleStatus struct {

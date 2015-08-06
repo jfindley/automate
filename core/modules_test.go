@@ -61,8 +61,12 @@ type testInput struct {
 	data map[string]interface{}
 }
 
-func (t testInput) Data() map[string]interface{} {
+func (t *testInput) Data() map[string]interface{} {
 	return t.data
+}
+
+func (t *testInput) Validate(in InputSchema) bool {
+	return true
 }
 
 // This just tests the module structure is intact
@@ -70,13 +74,12 @@ func TestModule(t *testing.T) {
 	var (
 		m Module
 		r testResponse
-		i testInput
 	)
 
 	m = NewTestModule()
-	i.data = map[string]interface{}{"input": "test string"}
+	in := NewConfigInput(map[string]interface{}{"input": "test string"})
 
-	m.Configure(i)
+	m.Configure(in)
 	m.Run(&r)
 
 	if r.level != "info" {
