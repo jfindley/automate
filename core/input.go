@@ -19,14 +19,6 @@ func NewInputSchema(in []byte) (InputSchema, error) {
 	return schema, err
 }
 
-func NewInputSchemaFile(file string) (InputSchema, error) {
-	in, err := ioutil.ReadFile(file)
-	if err != nil {
-		return InputSchema{}, nil
-	}
-	return NewInputSchema(in)
-}
-
 type ConfigInput struct {
 	data map[string]interface{}
 }
