@@ -1,8 +1,8 @@
 package core
 
 import (
+	"fmt"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"reflect"
 	"regexp"
 )
@@ -27,13 +27,13 @@ func (c *ConfigInput) Data() map[string]interface{} {
 	return c.data
 }
 
-func (c *ConfigInput) Validate(schema InputSchema) bool {
+func (c *ConfigInput) Validate(schema InputSchema) error {
 	for k, thisSchema := range schema {
 		thisData, ok := c.data[k]
 
 		if !ok {
 			if thisSchema.Required {
-				return false
+				return fmt.Errorf("Missing required parameter: %s", k)
 			} else {
 				continue
 			}
@@ -41,7 +41,7 @@ func (c *ConfigInput) Validate(schema InputSchema) bool {
 
 		if len(thisSchema.Values) > 0 {
 			if !containsValues(thisData, thisSchema.Values) {
-				return false
+				return fmt.Errorf("Invalid value of paramter %s: %v", k, thisData)
 			}
 		}
 
@@ -49,12 +49,12 @@ func (c *ConfigInput) Validate(schema InputSchema) bool {
 			thisType := reflect.TypeOf(thisData).String()
 
 			if !containsTypes(thisType, thisSchema.Types) {
-				return false
+				return fmt.Errorf("Invalid type of paramter %s: %s", k, thisType)
 			}
 		}
 
 	}
-	return true
+	return nil
 }
 
 func NewConfigInput(in map[string]interface{}) *ConfigInput {

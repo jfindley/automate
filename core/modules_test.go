@@ -65,8 +65,8 @@ func (t *testInput) Data() map[string]interface{} {
 	return t.data
 }
 
-func (t *testInput) Validate(in InputSchema) bool {
-	return true
+func (t *testInput) Validate(in InputSchema) error {
+	return nil
 }
 
 // This just tests the module structure is intact
