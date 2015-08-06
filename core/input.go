@@ -2,6 +2,7 @@ package core
 
 import (
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"reflect"
 	"regexp"
 )
@@ -16,6 +17,14 @@ func NewInputSchema(in []byte) (InputSchema, error) {
 	var schema InputSchema
 	err := yaml.Unmarshal(in, &schema)
 	return schema, err
+}
+
+func NewInputSchemaFile(file string) (InputSchema, error) {
+	in, err := ioutil.ReadFile(file)
+	if err != nil {
+		return InputSchema{}, nil
+	}
+	return NewInputSchema(in)
 }
 
 type ConfigInput struct {
