@@ -2,16 +2,14 @@ package file
 
 import (
 	"io"
-	"os"
 
 	"github.com/jfindley/automate/core"
 )
 
 // File implements a Module which operates on files
 type File struct {
-	handle *os.File
-	ctl    core.RunControl
-	source io.Reader
+	path    string
+	content io.Reader
 }
 
 func (f *File) Name() string {
@@ -20,6 +18,11 @@ func (f *File) Name() string {
 
 func (f *File) Configure(in core.Input) error {
 	err := in.Validate(schema)
+	if err != nil {
+		return err
+	}
+
+	f.path = in.Data()["path"].(string)
 
 	return err
 }
