@@ -46,3 +46,27 @@ func TestConvertByte(t *testing.T) {
 		}
 	}
 }
+
+func TestConvertInt(t *testing.T) {
+	var target int64 = 10
+
+	for k, v := range testingTypes {
+		switch k {
+		case "int", "int16", "int32", "int64", "uint", "uint16", "uint32", "uint64", "float32", "float64":
+			out, err := ConvertInt(v)
+			if err != nil {
+				t.Error(err)
+			}
+			if out != target {
+				t.Errorf("Valid type '%s' does not match", k)
+			}
+
+		default:
+			_, err := ConvertInt(v)
+			if err == nil {
+				t.Errorf("Invalid type '%s' did not produce an error", k)
+			}
+		}
+	}
+
+}

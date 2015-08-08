@@ -2,9 +2,10 @@ package core
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"reflect"
 	"regexp"
+
+	"gopkg.in/yaml.v2"
 )
 
 type InputSchema map[string]struct {

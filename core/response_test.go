@@ -2,9 +2,10 @@ package core
 
 import (
 	"bytes"
-	"github.com/Sirupsen/logrus"
 	"regexp"
 	"testing"
+
+	"github.com/Sirupsen/logrus"
 )
 
 var lvl = regexp.MustCompile(`level=(\w+)`)
