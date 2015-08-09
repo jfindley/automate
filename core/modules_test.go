@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"golang.org/x/tools/godoc/vfs"
 	"testing"
 )
 
@@ -22,6 +23,10 @@ func (t *testModule) Run(r ResponseWriter) {
 	r.Success(true)
 	r.Changed(true)
 	r.Message("info", "Run completed successfully with data:", t.data["input"])
+}
+
+func (t *testModule) RunTest(fs vfs.FileSystem, r ResponseWriter) {
+	t.Run(r)
 }
 
 func NewTestModule() *testModule {
