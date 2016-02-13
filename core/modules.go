@@ -1,14 +1,14 @@
 package core
 
 import (
-	"golang.org/x/tools/godoc/vfs"
+	"sourcegraph.com/sourcegraph/rwvfs"
 )
 
 type Module interface {
 	Name() string
 	Configure(Input) error
 	Run(ResponseWriter)
-	RunTest(vfs.FileSystem, ResponseWriter)
+	RunTest(rwvfs.FileSystem, ResponseWriter)
 }
 
 type ResponseWriter interface {

@@ -21,10 +21,11 @@ path:
   - string
 
 action:
+  types:
+  - string
   values:
   - touch
   - set
-  - append
   - remove
 
 mode:

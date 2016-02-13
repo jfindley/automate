@@ -2,7 +2,7 @@ package core
 
 import (
 	"fmt"
-	"golang.org/x/tools/godoc/vfs"
+	"sourcegraph.com/sourcegraph/rwvfs"
 	"testing"
 )
 
@@ -25,7 +25,7 @@ func (t *testModule) Run(r ResponseWriter) {
 	r.Message("info", "Run completed successfully with data:", t.data["input"])
 }
 
-func (t *testModule) RunTest(fs vfs.FileSystem, r ResponseWriter) {
+func (t *testModule) RunTest(fs rwvfs.FileSystem, r ResponseWriter) {
 	t.Run(r)
 }
 
