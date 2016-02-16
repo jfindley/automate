@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 
+	"bytes"
 	"github.com/jfindley/automate/core"
 	"github.com/jfindley/testfs"
 )
@@ -22,6 +23,7 @@ type File struct {
 	path   string
 	mode   os.FileMode
 	data   io.Reader
+	sum    []byte
 	action func() error
 }
 
@@ -34,15 +36,14 @@ func (f *File) Configure(in core.Input) error {
 	if err != nil {
 		return err
 	}
-    
-    var ok bool
 
-	f.path, ok = in.Data()["path"].(string)
-    if !ok {
-        return errors.New("Path is not a string")
-    }
+	if val, err := in.Data("path"); err != nil {
+		return errors.New("Path is required")
+	} else {
+		f.path = val.(string)
+	}
 
-	if val, ok := in.Data()["mode"]; !ok {
+	if val, err := in.Data("mode"); err != nil {
 		f.mode = os.FileMode(0644)
 	} else {
 		f.mode, err = fileMode(val)
@@ -51,7 +52,7 @@ func (f *File) Configure(in core.Input) error {
 		}
 	}
 
-	if val, ok := in.Data()["action"]; !ok {
+	if val, err := in.Data("action"); err != nil {
 		f.action = f.touch
 	} else {
 		switch val.(string) {
@@ -62,6 +63,7 @@ func (f *File) Configure(in core.Input) error {
 			f.action = f.remove
 
 		case "set":
+			f.configureData(in)
 			f.action = f.set
 
 		default:
@@ -70,6 +72,25 @@ func (f *File) Configure(in core.Input) error {
 	}
 
 	return err
+}
+
+func (f *File) configureData(in core.Input) {
+
+	t, err := in.Type("content")
+	if err != nil {
+		return
+	}
+
+	if t == "pipe" {
+		val, _ := in.Data("content")
+		f.data = val.(io.Reader)
+	}
+
+	if t == "data" {
+		val, _ := in.Data("content")
+		f.sum = dataChecksum(val.([]byte))
+		f.data = bytes.NewReader(val.([]byte))
+	}
 }
 
 func (f *File) Run(r core.ResponseWriter) {
@@ -129,6 +150,13 @@ func fileMode(in interface{}) (os.FileMode, error) {
 
 // bufferedWrite efficiently writes from an io.Reader to an io.Writer
 func bufferedWrite(in io.Reader, out io.Writer) error {
+	if in == nil {
+		return errors.New("Input cannot be nil")
+	}
+    if out == nil {
+		return errors.New("Output cannot be nil")
+	}
+
 	w := bufio.NewWriter(out)
 
 	_, err := io.Copy(w, in)

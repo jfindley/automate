@@ -13,3 +13,8 @@ func fileChecksum(path string) ([]byte, error) {
 	}
 	return hash.Sum(data), nil
 }
+
+func dataChecksum(data []byte) []byte {
+    hash := blake2.NewBlake2B()
+    return hash.Sum(data)
+}

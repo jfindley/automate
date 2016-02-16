@@ -1,10 +1,11 @@
 package file
 
 import (
-	"bytes"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var checksumTarget = []byte{
@@ -17,16 +18,18 @@ var checksumTarget = []byte{
 
 func TestFileChecksum(t *testing.T) {
 	err := ioutil.WriteFile(testFile, testInitialData, 0644)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
+
 	defer os.Remove(testFile)
 
 	out, err := fileChecksum(testFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if bytes.Compare(out, checksumTarget) != 0 {
-		t.Error("Bad checksum")
-	}
+	assert.NoError(t, err)
+
+	assert.Equal(t, checksumTarget, out, "Checksum should match")
+}
+
+func TestDataChecksum(t *testing.T) {
+	out := dataChecksum(testInitialData)
+
+	assert.Equal(t, checksumTarget, out, "Checksum should match")
 }

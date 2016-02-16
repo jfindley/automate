@@ -20,7 +20,8 @@ type ResponseWriter interface {
 }
 
 type Input interface {
-	Data() map[string]interface{}
+	Data(string) (interface{}, error)
+    Type(string) (string, error)
 	Validate(InputSchema) error
 }
 

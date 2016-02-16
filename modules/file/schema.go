@@ -46,4 +46,9 @@ group:
   types:
   - string
   - integer
+  
+content:
+  types:
+  - data
+  - pipe
 `)

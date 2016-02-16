@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"regexp"
 
+	"errors"
 	"gopkg.in/yaml.v2"
 )
 
@@ -21,11 +22,22 @@ func NewInputSchema(in []byte) (InputSchema, error) {
 }
 
 type ConfigInput struct {
-	data map[string]interface{}
+	data  map[string]interface{}
+	types map[string]string
 }
 
-func (c *ConfigInput) Data() map[string]interface{} {
-	return c.data
+func (c *ConfigInput) Data(val string) (interface{}, error) {
+	if _, ok := c.data[val]; ok {
+		return c.data[val], nil
+	}
+	return nil, errors.New("Value undefined")
+}
+
+func (c *ConfigInput) Type(val string) (string, error) {
+	if _, ok := c.types[val]; ok {
+		return c.types[val], nil
+	}
+	return "", errors.New("Type undefined")
 }
 
 func (c *ConfigInput) Validate(schema InputSchema) error {
@@ -49,8 +61,10 @@ func (c *ConfigInput) Validate(schema InputSchema) error {
 		if len(thisSchema.Types) > 0 {
 			thisType := reflect.TypeOf(thisData).String()
 
-			if !containsTypes(thisType, thisSchema.Types) {
+			if t, ok := containsTypes(thisType, thisSchema.Types); !ok {
 				return fmt.Errorf("Invalid type of paramter %s: %s", k, thisType)
+			} else {
+				c.types[k] = t
 			}
 		}
 
@@ -61,6 +75,7 @@ func (c *ConfigInput) Validate(schema InputSchema) error {
 func NewConfigInput(in map[string]interface{}) *ConfigInput {
 	c := new(ConfigInput)
 	c.data = in
+	c.types = make(map[string]string)
 	return c
 }
 
@@ -75,7 +90,7 @@ func containsValues(needle interface{}, haystack []interface{}) bool {
 	return false
 }
 
-func containsTypes(needle string, haystack []string) bool {
+func containsTypes(needle string, haystack []string) (string, bool) {
 
 	integer := regexp.MustCompile(`^(u)?int(16)?(32)?(64)?$`)
 	float := regexp.MustCompile(`^float(32|64)$`)
@@ -84,30 +99,30 @@ func containsTypes(needle string, haystack []string) bool {
 
 		switch haystack[i] {
 		case needle:
-			return true
+			return needle, true
 
 		case "data":
 			if needle == "[]uint8" {
-				return true
+				return "data", true
 			}
 
 		case "integer":
 			if integer.MatchString(needle) {
-				return true
+				return "integer", true
 			}
 
 		case "float", "number":
 			if integer.MatchString(needle) || float.MatchString(needle) {
-				return true
+				return "number", true
 			}
 
 		case "pipe":
 			if needle == "*io.PipeWriter" || needle == "*io.PipeReader" {
-				return true
+				return "pipe", true
 			}
 		}
 
 	}
 
-	return false
+	return "", false
 }
