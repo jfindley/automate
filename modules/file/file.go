@@ -2,12 +2,12 @@ package file
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"io"
 	"os"
 	"strconv"
 
-	"bytes"
 	"github.com/jfindley/automate/core"
 	"github.com/jfindley/testfs"
 )
@@ -27,10 +27,12 @@ type File struct {
 	action func() error
 }
 
+// Name returns the name of the module
 func (f *File) Name() string {
 	return "file"
 }
 
+// Configure configures an instance of a module
 func (f *File) Configure(in core.Input) error {
 	err := in.Validate(schema)
 	if err != nil {
@@ -93,14 +95,10 @@ func (f *File) configureData(in core.Input) {
 	}
 }
 
-func (f *File) Run(r core.ResponseWriter) {
+// Run executes a module instance
+func (f *File) Run(fs testfs.FileSystem, r core.ResponseWriter) {
 	// var origExist bool
 	// fi, err := os.Stat(f.path)
-}
-
-func (f *File) RunTest(testFs testfs.FileSystem, r core.ResponseWriter) {
-	fs = testFs
-	f.Run(r)
 }
 
 // touch a file.  Same as system touch.
@@ -153,7 +151,7 @@ func bufferedWrite(in io.Reader, out io.Writer) error {
 	if in == nil {
 		return errors.New("Input cannot be nil")
 	}
-    if out == nil {
+	if out == nil {
 		return errors.New("Output cannot be nil")
 	}
 
