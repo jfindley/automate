@@ -37,7 +37,6 @@ type testResponse struct {
 	callbacks bool
 	message   string
 	level     string
-	status    ModuleStatus
 }
 
 func (t *testResponse) Success(in bool) {
@@ -51,10 +50,6 @@ func (t *testResponse) Changed(in bool) {
 func (t *testResponse) Message(level string, messages ...interface{}) {
 	t.message = fmt.Sprint(messages)
 	t.level = level
-}
-
-func (t *testResponse) Status(m ModuleStatus) {
-	t.status = m
 }
 
 func (t *testResponse) TriggeredJobs(jobs ...Module) {

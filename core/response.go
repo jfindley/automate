@@ -1,50 +1,44 @@
 package core
 
 import (
-	"github.com/Sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 )
 
-var log *logrus.Logger
-
-func init() {
-	log = logrus.New()
-}
-
 type Response struct {
-	Ok        bool
-	Callbacks bool
-	Fields    logrus.Fields
+	Ok     bool
+	Notify bool
+	Fields log.Fields
 }
 
 func (r *Response) Success(ok bool) {
 	r.Ok = ok
 }
 
-func (r *Response) TriggerCallbacks(ok bool) {
-	r.Callbacks = ok
+func (r *Response) Changed(ok bool) {
+	r.Notify = ok
 }
 
 func (r *Response) Message(level string, messages ...interface{}) {
 	l := log.WithFields(r.Fields)
 
-	lvl, err := logrus.ParseLevel(level)
+	lvl, err := log.ParseLevel(level)
 	if err != nil {
 		l.Warn("Unable to parse log level: ", level)
-		lvl = logrus.InfoLevel
+		lvl = log.InfoLevel
 	}
 
 	switch lvl {
-	case logrus.PanicLevel:
+	case log.PanicLevel:
 		l.Panic(messages...)
-	case logrus.FatalLevel:
+	case log.FatalLevel:
 		l.Fatal(messages...)
-	case logrus.ErrorLevel:
+	case log.ErrorLevel:
 		l.Error(messages...)
-	case logrus.WarnLevel:
+	case log.WarnLevel:
 		l.Warn(messages...)
-	case logrus.InfoLevel:
+	case log.InfoLevel:
 		l.Info(messages...)
-	case logrus.DebugLevel:
+	case log.DebugLevel:
 		l.Debug(messages...)
 	}
 }

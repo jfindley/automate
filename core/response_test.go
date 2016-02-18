@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Sirupsen/logrus"
+	log "github.com/Sirupsen/logrus"
 )
 
 var lvl = regexp.MustCompile(`level=(\w+)`)
@@ -31,20 +31,20 @@ func testMessage(in string, expected string) bool {
 
 func TestMessage(t *testing.T) {
 	var out bytes.Buffer
-	log.Out = &out
-	log.Formatter = &logrus.TextFormatter{DisableColors: true}
+    log.SetOutput(&out)
+    log.SetFormatter(&log.TextFormatter{DisableColors: true})
 
 	r := NewResponse()
 
 	r.Success(true)
-	r.TriggerCallbacks(true)
+	r.Changed(true)
 
 	if !r.Ok {
 		t.Error("Bad success status")
 	}
 
-	if !r.Callbacks {
-		t.Error("Bad callback status")
+	if !r.Notify {
+		t.Error("Bad notify status")
 	}
 
 	r.Message("unknown", "test")
