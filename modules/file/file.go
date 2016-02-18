@@ -8,15 +8,11 @@ import (
 	"os"
 	"strconv"
 
+	"io/ioutil"
+
 	"github.com/jfindley/automate/core"
 	"github.com/jfindley/testfs"
 )
-
-var fs testfs.FileSystem
-
-func init() {
-	fs = testfs.NewOSFS()
-}
 
 // File implements a Module which operates on files.
 type File struct {
@@ -24,7 +20,7 @@ type File struct {
 	mode   os.FileMode
 	data   io.Reader
 	sum    []byte
-	action func() error
+	action func(testfs.FileSystem, core.ResponseWriter)
 }
 
 // Name returns the name of the module
@@ -90,40 +86,102 @@ func (f *File) configureData(in core.Input) {
 
 	if t == "data" {
 		val, _ := in.Data("content")
-		f.sum = dataChecksum(val.([]byte))
+		f.sum = sum(val.([]byte))
 		f.data = bytes.NewReader(val.([]byte))
 	}
 }
 
 // Run executes a module instance
 func (f *File) Run(fs testfs.FileSystem, r core.ResponseWriter) {
-	// var origExist bool
-	// fi, err := os.Stat(f.path)
+	f.action(fs, r)
 }
 
 // touch a file.  Same as system touch.
-func (f *File) touch() error {
+func (f *File) touch(fs testfs.FileSystem, r core.ResponseWriter) {
 	file, err := fs.OpenFile(f.path, os.O_CREATE|os.O_WRONLY, f.mode)
 	if err != nil {
-		return err
+		r.Message("error", err.Error())
+		r.Success(false)
+		return
 	}
-	return file.Close()
+	err = file.Close()
+	if err != nil {
+		r.Message("error", err.Error())
+		r.Success(false)
+		return
+	}
+	r.Message("info", "touched ", f.path)
+	r.Success(true)
+	r.Changed(true)
+	return
 }
 
 // set sets the contents of a file.
-func (f *File) set() error {
-	file, err := fs.OpenFile(f.path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, f.mode)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+func (f *File) set(fs testfs.FileSystem, r core.ResponseWriter) {
+	var (
+		file testfs.File
+		err  error
+	)
 
-	return bufferedWrite(f.data, file)
+	// If we have a valid checksum for the input data and the file exists, read it
+	// and avoid modifying the file if possible.
+	if f.matching(fs) {
+		r.Success(true)
+		r.Changed(false)
+		r.Message("info", f.path, " unchanged")
+		return
+	}
+
+	file, err = fs.OpenFile(f.path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, f.mode)
+	if err != nil {
+		r.Message("error", err.Error())
+		r.Success(false)
+		return
+	}
+
+	err = bufferedWrite(f.data, file)
+	if err != nil {
+		r.Message("error", err.Error())
+		r.Success(false)
+		return
+	}
+
+	err = file.Close()
+	if err != nil {
+		r.Message("error", err.Error())
+		r.Success(false)
+		return
+	}
+
+	r.Message("info", "set content of ", f.path)
+	r.Success(true)
+	r.Changed(true)
+	return
 }
 
 // remove removes a file.
-func (f *File) remove() error {
-	return fs.Remove(f.path)
+func (f *File) remove(fs testfs.FileSystem, r core.ResponseWriter) {
+	err := fs.Remove(f.path)
+	switch {
+
+	// Don't error if the file is already removed
+	case os.IsNotExist(err):
+		r.Success(true)
+		r.Changed(false)
+		r.Message("info", f.path, " already removed")
+
+	case err == nil:
+		r.Success(true)
+		r.Changed(true)
+		r.Message("info", f.path, " removed")
+
+	default:
+		r.Message("error", err.Error())
+		r.Success(false)
+
+	}
+
+	return
 }
 
 // fileMode parses input into a valid file mode
@@ -163,4 +221,29 @@ func bufferedWrite(in io.Reader, out io.Writer) error {
 	}
 
 	return w.Flush()
+}
+
+// matching returns true if a file matches the checksum, false otherwise
+func (f *File) matching(fs testfs.FileSystem) bool {
+	if f.sum == nil || len(f.sum) == 0 {
+		return false
+	}
+	_, err := fs.Stat(f.path)
+	if err != nil {
+		return false
+	}
+	file, err := fs.OpenFile(f.path, os.O_RDONLY, 0)
+	if err != nil {
+		return false
+	}
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		return false
+	}
+
+	if bytes.Compare(f.sum, data) == 0 {
+		return true
+	}
+
+	return false
 }

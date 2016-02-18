@@ -1,134 +1,153 @@
 package file
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
+    "bytes"
 
 	"github.com/jfindley/automate/core"
+	"github.com/jfindley/testfs"
 	"github.com/stretchr/testify/assert"
+	log "github.com/Sirupsen/logrus"
 )
 
-var testFile = os.TempDir() + "/automate_file"
+var resp *core.Response
+
+func init() {
+    resp = core.NewResponse()
+    var out bytes.Buffer
+    log.SetOutput(&out)
+}
+
+var testFile = "/test_file"
 var testData = []byte("test data")
 var testInitialData = []byte("initial data")
 
 func TestFileName(t *testing.T) {
-	f := new(File)
-
-	if f.Name() != "file" {
-		t.Error("Wrong module name")
-	}
+	file := new(File)
+    
+    assert.Equal(t, "file", file.Name())
 }
 
 func TestFileConfigure(t *testing.T) {
-	f := new(File)
+	file := new(File)
 
 	conf := core.NewConfigInput(map[string]interface{}{})
 
-	err := f.Configure(conf)
+	err := file.Configure(conf)
 	assert.Error(t, err, "No error with missing parameters")
 
 	conf = core.NewConfigInput(map[string]interface{}{
 		"path": testFile,
 	})
-	err = f.Configure(conf)
+	err = file.Configure(conf)
 	assert.NoError(t, err)
 
-	assert.Equal(t, testFile, f.path, "File path should match")
-	assert.Equal(t, os.FileMode(0644), f.mode, "File mode should match")
+	assert.Equal(t, testFile, file.path, "File path should match")
+	assert.Equal(t, os.FileMode(0644), file.mode, "File mode should match")
 
 	conf = core.NewConfigInput(map[string]interface{}{
 		"path": testFile,
 		"mode": "bad",
 	})
-	err = f.Configure(conf)
+	err = file.Configure(conf)
 	assert.EqualError(t, err, "Unable to parse mode")
 
 	conf = core.NewConfigInput(map[string]interface{}{
 		"path": testFile,
 		"mode": "0755",
 	})
-	err = f.Configure(conf)
+	err = file.Configure(conf)
 	assert.NoError(t, err)
 
-	assert.Equal(t, os.FileMode(0755), f.mode, "File mode should match")
+	assert.Equal(t, os.FileMode(0755), file.mode, "File mode should match")
 
 	conf = core.NewConfigInput(map[string]interface{}{
 		"path":   testFile,
 		"mode":   0755,
 		"action": "touch",
 	})
-	err = f.Configure(conf)
+	err = file.Configure(conf)
 	assert.NoError(t, err)
 
-	assert.Equal(t, os.FileMode(0755), f.mode, "File mode should match")
+	assert.Equal(t, os.FileMode(0755), file.mode, "File mode should match")
 
 }
 
 func TestFileTouch(t *testing.T) {
-	f := new(File)
+	file := new(File)
+	fs := testfs.NewLocalTestFS()
 
 	conf := core.NewConfigInput(map[string]interface{}{
 		"path":   testFile,
 		"mode":   0755,
 		"action": "touch",
 	})
-	err := f.Configure(conf)
+	err := file.Configure(conf)
 	assert.NoError(t, err)
 
-	err = f.action()
-	assert.NoError(t, err)
+	resp := core.NewResponse()
+
+	file.Run(fs, resp)
+	assert.True(t, resp.Ok)
 	defer os.Remove(testFile)
 
-	fi, err := os.Stat(testFile)
+	fi, err := fs.Stat(testFile)
 	assert.NoError(t, err)
 
 	assert.Equal(t, os.FileMode(0755), fi.Mode(), "File mode should match")
 }
 
 func TestFileRemove(t *testing.T) {
-	f := new(File)
+	file := new(File)
+	fs := testfs.NewLocalTestFS()
 
-	file, err := os.OpenFile(testFile, os.O_CREATE|os.O_WRONLY, f.mode)
+	_, err := fs.Create(testFile)
 	assert.NoError(t, err)
-	file.Close()
 
 	conf := core.NewConfigInput(map[string]interface{}{
 		"path":   testFile,
 		"action": "remove",
 	})
-	err = f.Configure(conf)
+	err = file.Configure(conf)
 	assert.NoError(t, err)
 
-	err = f.action()
-	assert.NoError(t, err)
+	resp := core.NewResponse()
+
+	file.Run(fs, resp)
+	assert.True(t, resp.Ok)
 
 	_, err = os.Stat(testFile)
 	assert.True(t, os.IsNotExist(err))
 }
 
 func TestSetFile(t *testing.T) {
-	f := new(File)
+	file := new(File)
+	fs := testfs.NewLocalTestFS()
 
-	err := ioutil.WriteFile(testFile, testInitialData, 0644)
+	_, err := fs.Create(testFile)
 	assert.NoError(t, err)
-	defer os.Remove(testFile)
 
 	conf := core.NewConfigInput(map[string]interface{}{
 		"path":    testFile,
 		"action":  "set",
 		"content": testData,
 	})
-	err = f.Configure(conf)
+	err = file.Configure(conf)
 	assert.NoError(t, err)
 
-	err = f.action()
+	resp := core.NewResponse()
+
+	file.Run(fs, resp)
+	assert.True(t, resp.Ok)
+
+	res, err := fs.Open(testFile)
 	assert.NoError(t, err)
 
-	res, err := ioutil.ReadFile(testFile)
-	assert.NoError(t, err)
+	out := make([]byte, len(testData))
+	_, err = res.Read(out)
+    assert.NoError(t, err)
 
-	assert.Equal(t, testData, res, "File contents should match")
+	assert.Equal(t, testData, out, "File contents should match")
 
 }

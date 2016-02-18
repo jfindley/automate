@@ -1,8 +1,6 @@
 package file
 
 import (
-	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,20 +14,8 @@ var checksumTarget = []byte{
 	83, 19, 137, 100, 68, 147, 78, 176, 75, 144, 58, 104, 91,
 	20, 72, 183, 85, 213, 111, 112, 26, 254, 155, 226, 206}
 
-func TestFileChecksum(t *testing.T) {
-	err := ioutil.WriteFile(testFile, testInitialData, 0644)
-	assert.NoError(t, err)
-
-	defer os.Remove(testFile)
-
-	out, err := fileChecksum(testFile)
-	assert.NoError(t, err)
-
-	assert.Equal(t, checksumTarget, out, "Checksum should match")
-}
-
-func TestDataChecksum(t *testing.T) {
-	out := dataChecksum(testInitialData)
+func TestSum(t *testing.T) {
+	out := sum(testInitialData)
 
 	assert.Equal(t, checksumTarget, out, "Checksum should match")
 }
