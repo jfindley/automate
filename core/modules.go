@@ -7,8 +7,7 @@ import (
 type Module interface {
 	Name() string
 	Configure(Input) error
-	Run(ResponseWriter)
-	RunTest(rwvfs.FileSystem, ResponseWriter)
+	Run(rwvfs.FileSystem, ResponseWriter)
 }
 
 type ResponseWriter interface {

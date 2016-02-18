@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sourcegraph.com/sourcegraph/rwvfs"
 	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
 type testModule struct {
@@ -15,18 +16,16 @@ func (t *testModule) Name() string {
 }
 
 func (t *testModule) Configure(in Input) error {
-	t.data = in.Data()
-	return nil
+	val, err := in.Data("input")
+    t.data = make(map[string]interface{})
+    t.data["input"] = val
+	return err
 }
 
-func (t *testModule) Run(r ResponseWriter) {
+func (t *testModule) Run(fs rwvfs.FileSystem, r ResponseWriter) {
 	r.Success(true)
 	r.Changed(true)
 	r.Message("info", "Run completed successfully with data:", t.data["input"])
-}
-
-func (t *testModule) RunTest(fs rwvfs.FileSystem, r ResponseWriter) {
-	t.Run(r)
 }
 
 func NewTestModule() *testModule {
@@ -85,15 +84,12 @@ func TestModule(t *testing.T) {
 	in := NewConfigInput(map[string]interface{}{"input": "test string"})
 
 	m.Configure(in)
-	m.Run(&r)
-
-	if r.level != "info" {
-		t.Error("Bad level:", r.level)
-	}
-	if r.message != "[Run completed successfully with data: test string]" {
-		t.Error("Bad message text:", r.message)
-	}
-	if !r.ok || !r.callbacks {
-		t.Error("Bad status:", r.ok, r.callbacks)
-	}
+    
+    fs := rwvfs.Map(map[string]string{})
+	m.Run(fs, &r)
+    
+    assert.Equal(t, r.level, "info")
+    assert.Equal(t, "[Run completed successfully with data: test string]", r.message)
+    assert.True(t, r.ok)
+    assert.True(t, r.callbacks)
 }

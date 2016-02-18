@@ -3,6 +3,8 @@ package core
 import (
 	"io"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var testSchema = []byte(`
@@ -44,73 +46,60 @@ func TestInput(t *testing.T) {
 
 	conf := NewConfigInput(testInput)
 
-	if conf.Data()["test"] != "true" {
-		t.Error("Data method did not return data")
-	}
+	val, err := conf.Data("test")
+	assert.NoError(t, err)
+	assert.Equal(t, "true", val)
 
-	if err := conf.Validate(schema); err == nil {
-		t.Error("Config validated without required parameter")
-	}
+	err = conf.Validate(schema)
+	assert.Error(t, err)
 
 	conf.data["first"] = "test"
-	if err := conf.Validate(schema); err != nil {
-		t.Error("Config failed to validate with all required parameters")
-	}
+	err = conf.Validate(schema)
+	assert.NoError(t, err)
 
 	conf.data["second"] = 10
-	if err := conf.Validate(schema); err == nil {
-		t.Error("Config validated with improper types")
-	}
+	err = conf.Validate(schema)
+	assert.Error(t, err)
 
 	conf.data["second"] = []byte("test input")
-	if err := conf.Validate(schema); err != nil {
-		t.Error("Config failed to validate with proper types")
-	}
+	err = conf.Validate(schema)
+	assert.NoError(t, err)
 
 	conf.data["second"] = "test input"
-	if err := conf.Validate(schema); err != nil {
-		t.Error("Config failed to validate with proper types")
-	}
+	err = conf.Validate(schema)
+	assert.NoError(t, err)
 
 	conf.data["third"] = "bad"
-	if err := conf.Validate(schema); err == nil {
-		t.Error("Config validated with improper types")
-	}
+	err = conf.Validate(schema)
+	assert.Error(t, err)
 
 	conf.data["third"] = 10
-	if err := conf.Validate(schema); err != nil {
-		t.Error("Config failed to validate with proper types")
-	}
+	err = conf.Validate(schema)
+	assert.NoError(t, err)
 
 	conf.data["third"] = 10.01
-	if err := conf.Validate(schema); err != nil {
-		t.Error("Config failed to validate with proper types")
-	}
+	err = conf.Validate(schema)
+	assert.NoError(t, err)
 
 	conf.data["fourth"] = "bad"
-	if err := conf.Validate(schema); err == nil {
-		t.Error("Config validated with improper types")
-	}
+	err = conf.Validate(schema)
+	assert.Error(t, err)
 
 	conf.data["fourth"] = "create"
-	if err := conf.Validate(schema); err != nil {
-		t.Error("Config failed to validate with proper types")
-	}
+	err = conf.Validate(schema)
+	assert.NoError(t, err)
+
+	conf.data["fifth"] = "bad"
+	err = conf.Validate(schema)
+	assert.Error(t, err)
 
 	in, out := io.Pipe()
-	conf.data["fifth"] = "bad"
-	if err := conf.Validate(schema); err == nil {
-		t.Error("Config validated with improper types")
-	}
-
 	conf.data["fifth"] = in
-	if err := conf.Validate(schema); err != nil {
-		t.Error("Config failed to validate with proper types")
-	}
+	err = conf.Validate(schema)
+	assert.NoError(t, err)
 
 	conf.data["fifth"] = out
-	if err := conf.Validate(schema); err != nil {
-		t.Error("Config failed to validate with proper types")
-	}
+	err = conf.Validate(schema)
+	assert.NoError(t, err)
 
 }
