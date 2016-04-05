@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"strconv"
-
 	"io/ioutil"
 
 	"github.com/jfindley/automate/core"
