@@ -68,6 +68,11 @@ func walk(fs testfs.FileSystem, t *tar.Writer) (err error) {
 			hdr.Name = cwd + "/" + hdr.Name
 		}
         
+        // Strip leading slashes
+        if hdr.Name[0] == '/' {
+            hdr.Name = hdr.Name[1:]
+        }
+        
 		err = t.WriteHeader(hdr)
 		if err != nil {
 			return
